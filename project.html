@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+
+<head></head>
+
+<body>
+    
+    <html>
+
+    <head>
+        <title>Interactive World Map</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+        <link
+        rel="stylesheet"
+        href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z"
+        crossorigin="anonymous"
+      />
+      <script
+        src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"
+      ></script>
+      <script
+        src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+        integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+        crossorigin="anonymous"
+      ></script>
+      <script
+        src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+        integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
+        crossorigin="anonymous"
+      ></script>
+        <style>
+            body {
+                font-family: 'Arial', sans-serif;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: #f0f0f0;
+            }
+
+            #map {
+                width: 80%;
+                height: 80%;
+            }
+
+            .country {
+                fill: #ccc;
+                stroke: #fff;
+                stroke-width: 0.5;
+                cursor: pointer;
+            }
+
+            .country:hover {
+                fill: #ffcc00;
+            }
+
+            .tooltip {
+                position: absolute;
+                background: rgba(0, 0, 0, 0.7);
+                color: #fff;
+                padding: 5px;
+                border-radius: 3px;
+                pointer-events: none;
+                display: none;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="map"></div>
+        <div class="tooltip" id="tooltip"></div>
+        <div id="countryDetails">
+      <div class="modal fade" id="staticBackdrop" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="countryname">Modal title</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-dialog modal-dialog-scrollable d-flex flex-column">
+             <div class="d-flex flex-row justify-content-between w-500">   
+               <h5 id="area"></h5>
+               <h5 id="population"></h5> 
+             </div>  
+             <p id="modelContent"></p>
+            </div>  
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+        </div> 
+    
+    
+
+        <script src="https://d3js.org/d3.v6.min.js"></script>
+        <script>
+    const countries =   [
+      
+      {
+       id: "India",
+       area_km2 : 3287263,
+       population_millions: 1391,
+       description: "A country in South Asia known for its rich cultural heritage, ancient history, and being the world's largest democracy."
+      },
+      {
+         id:  "Russia",
+       area_km2: 17098242,
+       population_millions: 146,
+       description: "A country in South Asia known for its rich cultural heritage, ancient history, and being the world's largest democracy."
+      }
+  ]
+  
+  let h1Element = document.getElementById("countryname")
+  let area = document.getElementById("area")
+  let population = document.getElementById("population")
+
+  function DisplayDetails(details) {
+      let { id, description, area_km2, population_millions} = details
+      h1Element.textContent = id
+      pElement.textContent = description
+      area.textContent = area_km2 
+      population.textContent = population_millions
+  
+  }
+  
+  function displayContent(name) {
+        console.log(name)
+  
+      countries.forEach(each=> {
+          if (each.id == name) {
+              console.log(each)
+              DisplayDetails(each)
+          }
+      })  
+      $('#staticBackdrop').modal('show');
+  }
+            const width = document.getElementById('map').clientWidth;
+            const height = document.getElementById('map').clientHeight;
+            
+            let modelEl = document.getElementById("countryDetails")
+            modelEl.classList.add("d-none")
+           
+            let pElement = document.getElementById("modelContent")
+
+            const svg = d3.select("#map")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            const projection = d3.geoMercator()
+                .scale(150)
+                .translate([width / 2, height / 1.5]);
+
+            const path = d3.geoPath().projection(projection);
+
+            const tooltip = d3.select("#tooltip");
+
+            d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson").then(function(data) {
+                svg.append("g")
+                    .selectAll("path")
+                    .data(data.features)
+                    .enter()
+                    .append("path")
+                    .attr("d", path)
+                    .attr("class", "country")
+                    .on("mouseover", function(event, d) {
+                        d3.select(this).style("fill", "#ffcc00");
+                        tooltip.style("display", "block")
+                        .html(`<strong>Country:</strong> ${d.properties.name}`);
+                    })
+                    .on("mousemove", function(event) {
+                        tooltip.style("top", (event.pageY + 5) + "px")
+                            .style("left", (event.pageX + 5) + "px");
+                    })
+                    .on("mouseout", function() {
+                        d3.select(this).style("fill", "#ccc");
+                        tooltip.style("display", "none");
+                    })
+                    .on("click", function(event, d) {
+                        //alert(`You clicked on ${d.properties.name}`);
+                        modelEl.classList.add("d-block")
+                        console.log(d.properties.name)
+                        displayContent(d.properties.name)
+
+                    });
+            });
+        </script>
+    </body>
+
+    </html>
+</body>
+
+</html>
